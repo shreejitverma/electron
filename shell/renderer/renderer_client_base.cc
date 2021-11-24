@@ -291,6 +291,31 @@ void RendererClientBase::RenderFrameCreated(
 #endif
 }
 
+// This method is called when a child window has been created with window.open
+// and the WebPreferences has just been set from the parent.
+void RendererClientBase::WebViewCreated(blink::WebView* web_view) {
+  if (!web_view->MainFrame()->Opener())  // top level window
+    return;
+  // When a child window is created with window.open, its WebPreferences will
+  // be copied from its parent, and Chromium will load empty page in it
+  // immediately.
+  // Normally the WebPreferences is overriden in browser before navigation,
+  // but this behavior bypasses the browser side navigation and the child
+  // window will get wrong WebPreferences when loading empty page.
+  // This behavior will end up initializing Node.js in the child window with
+  // the same WebPreferences of its parent, leads to problem that child window
+  // having node integration while it shouldn't.
+  // We are working around this problem by disabling WebPreferences's node
+  // integration in the renderer.
+  // FIXME(zcbenz): Find a way to prevent Chromium from loading empty page in
+  // child window before navigation, then remove this.
+  blink::web_pref::WebPreferences prefs = web_view->GetWebPreferences();
+  prefs.context_isolation = true;
+  prefs.node_integration = false;
+  prefs.node_integration_in_sub_frames = false;
+  web_view->SetWebPreferences(prefs);
+}
+
 #if BUILDFLAG(ENABLE_BUILTIN_SPELLCHECKER)
 void RendererClientBase::GetInterface(
     const std::string& interface_name,

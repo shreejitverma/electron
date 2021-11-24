@@ -101,6 +101,7 @@ class RendererClientBase : public content::ContentRendererClient
   void RenderThreadStarted() override;
   void ExposeInterfacesToBrowser(mojo::BinderMap* binders) override;
   void RenderFrameCreated(content::RenderFrame*) override;
+  void WebViewCreated(blink::WebView* web_view) override;
   bool OverrideCreatePlugin(content::RenderFrame* render_frame,
                             const blink::WebPluginParams& params,
                             blink::WebPlugin** plugin) override;
