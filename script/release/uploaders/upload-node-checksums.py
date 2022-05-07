@@ -8,7 +8,7 @@ import sys
 import tempfile
 
 sys.path.append(
-  os.path.abspath(os.path.dirname(os.path.abspath(__file__)) + "/../.."))
+    os.path.abspath(f"{os.path.dirname(os.path.abspath(__file__))}/../.."))
 
 from lib.config import s3_config
 from lib.util import download, rm_rf, s3put, safe_mkdir
@@ -90,7 +90,7 @@ def create_checksum(algorithm, directory, filename, files):
     h = hashlib.new(algorithm)
     with open(path, 'rb') as f:
       h.update(f.read())
-      lines.append(h.hexdigest() + '  ' + os.path.relpath(path, directory))
+      lines.append(f'{h.hexdigest()}  {os.path.relpath(path, directory)}')
 
   checksum_file = os.path.join(directory, filename)
   with open(checksum_file, 'w') as f:

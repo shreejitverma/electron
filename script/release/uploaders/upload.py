@@ -13,7 +13,7 @@ from struct import Struct
 import sys
 
 sys.path.append(
-  os.path.abspath(os.path.dirname(os.path.abspath(__file__)) + "/../.."))
+    os.path.abspath(f"{os.path.dirname(os.path.abspath(__file__))}/../.."))
 
 from zipfile import ZipFile
 from lib.config import PLATFORM, get_target_arch,  get_env_var, s3_config, \
@@ -57,11 +57,8 @@ def main():
     sys.stderr.flush()
     return 1
 
-  tag_exists = False
   release = get_release(args.version)
-  if not release['draft']:
-    tag_exists = True
-
+  tag_exists = not release['draft']
   if not args.upload_to_s3:
     assert release['exists'], \
           'Release does not exist; cannot upload to GitHub!'
@@ -88,10 +85,6 @@ def main():
     dsym_zip = os.path.join(OUT_DIR, DSYM_NAME)
     shutil.copy2(os.path.join(OUT_DIR, 'dsym.zip'), dsym_zip)
     upload_electron(release, dsym_zip, args)
-  elif PLATFORM == 'win32':
-    pdb_zip = os.path.join(OUT_DIR, PDB_NAME)
-    shutil.copy2(os.path.join(OUT_DIR, 'pdb.zip'), pdb_zip)
-    upload_electron(release, pdb_zip, args)
   elif PLATFORM == 'linux':
     debug_zip = os.path.join(OUT_DIR, DEBUG_NAME)
     shutil.copy2(os.path.join(OUT_DIR, 'debug.zip'), debug_zip)
@@ -112,6 +105,10 @@ def main():
       abi_headers_zip = os.path.join(OUT_DIR, 'libcxxabi_headers.zip')
       upload_electron(release, abi_headers_zip, args)
 
+  elif PLATFORM == 'win32':
+    pdb_zip = os.path.join(OUT_DIR, PDB_NAME)
+    shutil.copy2(os.path.join(OUT_DIR, 'pdb.zip'), pdb_zip)
+    upload_electron(release, pdb_zip, args)
   # Upload free version of ffmpeg.
   ffmpeg = get_zip_name('ffmpeg', ELECTRON_VERSION)
   ffmpeg_zip = os.path.join(OUT_DIR, ffmpeg)
@@ -352,8 +349,7 @@ def upload_electron(release, file_path, args):
 
 
 def upload_io_to_github(release, filename, filepath, version):
-  print('Uploading %s to Github' % \
-      (filename))
+  print(f'Uploading {filename} to Github')
   script_path = os.path.join(
     ELECTRON_DIR, 'script', 'release', 'uploaders', 'upload-to-github.ts')
   execute([TS_NODE, script_path, filepath, filename, str(release['id']),
@@ -362,7 +358,7 @@ def upload_io_to_github(release, filename, filepath, version):
 
 def upload_sha256_checksum(version, file_path, key_prefix=None):
   bucket, access_key, secret_key = s3_config()
-  checksum_path = '{}.sha256sum'.format(file_path)
+  checksum_path = f'{file_path}.sha256sum'
   if key_prefix is None:
     key_prefix = 'atom-shell/tmp/{0}'.format(version)
   sha256 = hashlib.sha256()
@@ -371,7 +367,7 @@ def upload_sha256_checksum(version, file_path, key_prefix=None):
 
   filename = os.path.basename(file_path)
   with open(checksum_path, 'w') as checksum:
-    checksum.write('{} *{}'.format(sha256.hexdigest(), filename))
+    checksum.write(f'{sha256.hexdigest()} *{filename}')
   s3put(bucket, access_key, secret_key, os.path.dirname(checksum_path),
         key_prefix, [checksum_path])
 
@@ -380,8 +376,7 @@ def get_release(version):
   script_path = os.path.join(
     ELECTRON_DIR, 'script', 'release', 'find-github-release.js')
   release_info = execute(['node', script_path, version])
-  release = json.loads(release_info)
-  return release
+  return json.loads(release_info)
 
 if __name__ == '__main__':
   sys.exit(main())

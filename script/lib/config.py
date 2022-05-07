@@ -28,10 +28,7 @@ verbose_mode = False
 
 
 def get_platform_key():
-  if 'MAS_BUILD' in os.environ:
-    return 'mas'
-  else:
-    return PLATFORM
+  return 'mas' if 'MAS_BUILD' in os.environ else PLATFORM
 
 
 def get_target_arch():
@@ -42,13 +39,12 @@ def get_target_arch():
 
 
 def get_env_var(name):
-  value = os.environ.get('ELECTRON_' + name, '')
+  value = os.environ.get(f'ELECTRON_{name}', '')
   if not value:
     # TODO Remove ATOM_SHELL_* fallback values
-    value = os.environ.get('ATOM_SHELL_' + name, '')
+    value = os.environ.get(f'ATOM_SHELL_{name}', '')
     if value:
-      print('Warning: Use $ELECTRON_' + name +
-            ' instead of $ATOM_SHELL_' + name)
+      print(((f'Warning: Use $ELECTRON_{name}' + ' instead of $ATOM_SHELL_') + name))
   return value
 
 
@@ -79,5 +75,5 @@ def get_zip_name(name, version, suffix=''):
     arch += 'v7l'
   zip_name = '{0}-{1}-{2}-{3}'.format(name, version, get_platform_key(), arch)
   if suffix:
-    zip_name += '-' + suffix
-  return zip_name + '.zip'
+    zip_name += f'-{suffix}'
+  return f'{zip_name}.zip'

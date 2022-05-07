@@ -46,9 +46,7 @@ def scoped_cwd(path):
 
 @contextlib.contextmanager
 def scoped_env(key, value):
-  origin = ''
-  if key in os.environ:
-    origin = os.environ[key]
+  origin = os.environ[key] if key in os.environ else ''
   os.environ[key] = value
   try:
     yield
@@ -59,7 +57,7 @@ def scoped_env(key, value):
 def download(text, url, path):
   safe_mkdir(os.path.dirname(path))
   with open(path, 'wb') as local_file:
-    print("Downloading %s to %s" % (url, path))
+    print(f"Downloading {url} to {path}")
     web_file = urlopen(url)
     info = web_file.info()
     if hasattr(info, 'getheader'):
@@ -85,7 +83,7 @@ def download(text, url, path):
         print(status, end=' ')
 
     if ci:
-      print("%s done." % (text))
+      print(f"{text} done.")
     else:
       print()
   return path
@@ -109,10 +107,8 @@ def make_zip(zip_file_path, files, dirs):
 
 
 def rm_rf(path):
-  try:
+  with contextlib.suppress(OSError):
     shutil.rmtree(path)
-  except OSError:
-    pass
 
 
 def safe_unlink(path):
@@ -158,7 +154,7 @@ def get_electron_version():
   SOURCE_ROOT = os.path.abspath(os.path.join(__file__, '..', '..', '..'))
   version_file = os.path.join(SOURCE_ROOT, 'ELECTRON_VERSION')
   with open(version_file) as f:
-    return 'v' + f.read().strip()
+    return f'v{f.read().strip()}'
 
 def s3put(bucket, access_key, secret_key, prefix, key_prefix, files):
   env = os.environ.copy()
@@ -175,10 +171,8 @@ def s3put(bucket, access_key, secret_key, prefix, key_prefix, files):
   print(output)
 
 def get_out_dir():
-  out_dir = 'Debug'
   override = os.environ.get('ELECTRON_OUT_DIR')
-  if override is not None:
-    out_dir = override
+  out_dir = override if override is not None else 'Debug'
   return os.path.join(SRC_DIR, 'out', out_dir)
 
 # NOTE: This path is not created by gn, it is used as a scratch zone by our

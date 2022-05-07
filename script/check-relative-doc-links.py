@@ -18,21 +18,16 @@ def main():
   try:
     for root, dirs, files in os.walk(DOCS_DIR):
       totalDirs += len(dirs)
-      for f in files:
-        if f.endswith('.md'):
-          filepaths.append(os.path.join(root, f))
+      filepaths.extend(os.path.join(root, f) for f in files if f.endswith('.md'))
   except KeyboardInterrupt:
     print('Keyboard interruption. Please try again.')
     return
 
-  totalBrokenLinks = 0
-  for path in filepaths:
-    totalBrokenLinks += getBrokenLinks(path)
-
-  print('Parsed through ' + str(len(filepaths)) +
-        ' files within docs directory and its ' +
-        str(totalDirs) + ' subdirectories.')
-  print('Found ' + str(totalBrokenLinks) + ' broken relative links.')
+  totalBrokenLinks = sum(getBrokenLinks(path) for path in filepaths)
+  print(((f'Parsed through {len(filepaths)}' +
+          ' files within docs directory and its ') + str(totalDirs) +
+         ' subdirectories.'))
+  print(f'Found {str(totalBrokenLinks)} broken relative links.')
   return totalBrokenLinks
 
 
@@ -57,11 +52,11 @@ def getBrokenLinks(filepath):
     matchLinks = linkRegexLink.search(line)
     matchReferenceLinks = referenceLinkRegex.search(line)
     if matchLinks:
-      relativeLink = matchLinks.group('link')
+      relativeLink = matchLinks['link']
       if not str(relativeLink).startswith('http'):
         links.append(relativeLink)
     if matchReferenceLinks:
-      referenceLink = matchReferenceLinks.group('link').strip('<>')
+      referenceLink = matchReferenceLinks['link'].strip('<>')
       if not str(referenceLink).startswith('http'):
         links.append(referenceLink)
 
@@ -99,21 +94,19 @@ def checkSections(sections, lines):
   sectionHeader = sections[1]
   regexSectionTitle = re.compile('# (?P<header>.*)')
   for line in lines:
-    matchHeader = regexSectionTitle.search(line)
-    if matchHeader:
+    if matchHeader := regexSectionTitle.search(line):
       # This does the following to slugify a header name:
       #  * Replace whitespace with dashes
       #  * Strip anything that's not alphanumeric or a dash
       #  * Anything quoted with backticks (`) is an exception and will
       #    not have underscores stripped
-      matchHeader = str(matchHeader.group('header')).replace(' ', '-')
+      matchHeader = str(matchHeader['header']).replace(' ', '-')
       matchHeader = ''.join(
-        map(
-          lambda match: re.sub(invalidCharsRegex, '', match[0])
-          + re.sub(invalidCharsRegex + '|_', '', match[1]),
-          re.findall('(`[^`]+`)|([^`]+)', matchHeader),
-        )
-      )
+          map(
+              lambda match: (re.sub(invalidCharsRegex, '', match[0]) + re.sub(
+                  f'{invalidCharsRegex}|_', '', match[1])),
+              re.findall('(`[^`]+`)|([^`]+)', matchHeader),
+          ))
       if matchHeader.lower() == sectionHeader:
         return True
   return False
@@ -121,7 +114,7 @@ def checkSections(sections, lines):
 
 def print_errors(filepath, brokenLink):
   if brokenLink:
-    print("File Location: " + filepath)
+    print(f"File Location: {filepath}")
     for link in brokenLink:
       print("\tBroken links: " + link)
 

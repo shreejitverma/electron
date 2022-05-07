@@ -10,7 +10,7 @@ with open(inpath, 'r') as infile, open(outpath, 'w') as outfile:
   data = {}
   for argpath in argpaths:
     with open(argpath, 'r') as argfile:
-      data.update(json.load(argfile))
+      data |= json.load(argfile)
 
   s =  Template(infile.read()).substitute(data)
   outfile.write(s)

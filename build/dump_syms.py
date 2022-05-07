@@ -20,18 +20,17 @@ def get_module_info(header_info):
 def get_symbol_path(symbol_data):
   module_info = get_module_info(symbol_data[:symbol_data.index('\n')])
   if not module_info:
-    raise Exception("Couldn't get module info for binary '{}'".format(binary))
+    raise Exception(f"Couldn't get module info for binary '{binary}'")
   exe_name = module_info.name.replace('.pdb', '')
-  return os.path.join(module_info.name, module_info.hash, exe_name + ".sym")
+  return os.path.join(module_info.name, module_info.hash, f"{exe_name}.sym")
 
 def mkdir_p(path):
   """Simulates mkdir -p."""
   try:
     os.makedirs(path)
   except OSError as e:
-    if e.errno == errno.EEXIST and os.path.isdir(path):
-      pass
-    else: raise
+    if e.errno != errno.EEXIST or not os.path.isdir(path):
+      raise
 
 def main(dump_syms, binary, out_dir, stamp_file, dsym_file=None):
   args = [dump_syms]
